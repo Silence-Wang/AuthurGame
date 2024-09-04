@@ -23,6 +23,8 @@ public class GameInProcessingService {
 
     /**
      * 组车队的逻辑
+     * TODO 这里重新理一下逻辑，对于修改车队的做法，到底后端怎么处理这条记录？
+     * 如果roun
      * @param tempTeamInfo
      * @return
      */
@@ -70,7 +72,7 @@ public class GameInProcessingService {
      */
     public GameInfo vote(final VoteInfo voteInfo) {
         GameInfo gameInfo = gameService.getGameInfo(voteInfo.getGameId());
-        //TODO 这里检查一下投票人，防止出现重复投票。
+        // 这里检查一下投票人，防止出现重复投票。
         List<RoundInfo> roundInfos = gameInfo.getRoundInfos();
         RoundInfo roundInfo = roundInfos.stream()
                 .filter(round -> round.getRound() == voteInfo.getRound())
@@ -171,49 +173,5 @@ public class GameInProcessingService {
         redisService.saveEntityData(taskInfo.getGameId(), gameInfo);
     }
 
-    /**
-     * 根据gameId来获取round信息。
-     * 先计算Round的成功或者失败。
-     * 如果有3局失败或者3就成功，则直接判定胜负。
-     * @param gameId
-     * @return
-     */
-    public GameInfo getGameInfo(final String gameId) {
-        GameInfo gameInfo = gameService.getGameInfo(gameId);
-        List<RoundInfo> roundInfos = gameInfo.getRoundInfos().stream()
-                .filter(round -> round.getOrganized())
-                .collect(Collectors.toList());
 
-        //先判断本轮次任务是否成功，根据黑票数判定
-        if (!CollectionUtils.isEmpty(roundInfos)) {
-            for (RoundInfo roundInfo : roundInfos) {
-                if (roundInfo.getRound() == 4 && 7 <= gameInfo.getGamerNumber()) {
-                    if (roundInfo.getBlackTicketsNumber() >= 2) {
-                        roundInfo.setSuccess(Boolean.FALSE);
-                    }
-                } else {
-                    if (roundInfo.getBlackTicketsNumber() >= 1) {
-                        roundInfo.setSuccess(Boolean.FALSE);
-                    }
-                }
-            }
-        }
-
-        //再判断游戏是否结束。
-        Long successRounds = roundInfos.stream().filter(roundInfo -> roundInfo.getSuccess()).count();
-        if (successRounds == 3) {
-            gameInfo.setMessage("好人获胜！");
-            gameInfo.setEnd(Boolean.TRUE);
-        }
-
-        Long failedRounds = roundInfos.stream().filter(roundInfo -> !roundInfo.getSuccess()).count();
-        if (failedRounds == 3) {
-            gameInfo.setMessage("坏人获胜！");
-            gameInfo.setEnd(Boolean.TRUE);
-        }
-
-
-        redisService.saveEntityData(gameInfo.getGameId(), gameInfo);
-        return gameInfo;
-    }
 }

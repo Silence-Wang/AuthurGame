@@ -20,12 +20,13 @@ public class GameController {
 
     @GetMapping("/start/{gameId}")
     public GameInfo startGame(@PathVariable("gameId") String gameId) {
-        return  gameService.startGame(gameId);
+        return gameService.startGame(gameId);
     }
 
     @GetMapping("/refreshGame")
-    public void refresh() {
+    public String refresh() {
         gameService.refreshGame();
+        return "游戏人数与对应需要身份已经准备好。";
     }
 
     /**
@@ -34,9 +35,9 @@ public class GameController {
      * @param gameId
      * @return
      */
-    @GetMapping("/getGameInfo/{gameId}")
-    public GameInfo getGameInfo(@PathVariable("gameId") String gameId) {
-        return  gameService.startGame(gameId);
+    @GetMapping("/getGameRoundInfo/{gameId}")
+    public GameInfo getGameRoundInfo(@PathVariable("gameId") String gameId) {
+        return  gameService.getGameRoundInfo(gameId);
     }
 
 }

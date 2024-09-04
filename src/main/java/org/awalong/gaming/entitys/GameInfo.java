@@ -30,7 +30,7 @@ public class GameInfo implements Serializable {
     private Integer gamerNumber;
 
     //玩家与身份
-    private Map<String, String> playerIdentity;
+    private Map<String, PlayerIdentity> playerIdentitys;
 
     //游戏人物池
     private List<String> heroSink;

@@ -1,12 +1,16 @@
 package org.awalong.gaming.service.game;
 
 import org.awalong.gaming.entitys.GameInfo;
+import org.awalong.gaming.entitys.PlayerIdentity;
 import org.awalong.gaming.entitys.RoomInfo;
+import org.awalong.gaming.entitys.RoundInfo;
 import org.awalong.gaming.service.redis.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.awalong.gaming.service.redis.RedisService.*;
 
@@ -14,6 +18,11 @@ import static org.awalong.gaming.service.redis.RedisService.*;
 public class GameService {
 
     private static final String GAME_PREFIX  = "GAME_";
+
+    private static final String NEED_BEEN_SEEN_BY_MEILIN = "莫甘娜,刺客,奥伯伦";
+    private static final String NEED_BEEN_SEEN_BY_PAI = "莫甘娜,梅林";
+    private static final String NEED_CONFIRM_EACH_OTHER = "莫甘娜,刺客,莫德雷德,爪牙";
+
 
     @Autowired
     private RedisService redisService;
@@ -65,8 +74,10 @@ public class GameService {
         gameInfo.setStart(Boolean.FALSE);
         gameInfo.setGamerNumber(room.getNumber());
         gameInfo.setHasJoined(room.getRoomMembers());
+        gameInfo.setEnd(Boolean.FALSE);
+
         List<String> heroSink = new ArrayList<>();
-                switch (room.getNumber()) {
+        switch (room.getNumber()) {
             case 5:
                 heroSink = Arrays.asList(String.valueOf(redisService.getData(FIVE_PLAYER)).split(","));
                 break;
@@ -104,11 +115,25 @@ public class GameService {
 
             Collections.shuffle(hasJoined);
             Collections.shuffle(heroSink);
-            Map<String, String> match = new HashMap<>();
+            Map<String, PlayerIdentity> match = new HashMap<>();
+
+            // 先把玩家自己的身份随机安排好
+            Map<String, String> partInfo = new HashMap<>();
             for (int i = 0; i < hasJoined.size(); i++) {
-                match.put(hasJoined.get(i), heroSink.get(i));
+                partInfo.put(hasJoined.get(i), heroSink.get(i));
             }
-            game.setPlayerIdentity(match);
+
+            // 插入视野信息
+            for (Map.Entry<String, String> partInfoEntry : partInfo.entrySet()) {
+//                partInfoEntry.getKey()
+
+            }
+
+
+
+
+
+            game.setPlayerIdentitys(match);
             game.setStart(Boolean.TRUE);
         }
         redisService.saveEntityData(game.getGameId(), game);
@@ -119,5 +144,50 @@ public class GameService {
 
     public GameInfo getGameInfo(final String gameNumber) {
         return (GameInfo) redisService.getData(gameNumber);
+    }
+
+    /**
+     * 根据gameId来获取round信息。
+     * 先计算Round的成功或者失败。
+     * 如果有3局失败或者3就成功，则直接判定胜负。
+     * @param gameId
+     * @return
+     */
+    public GameInfo getGameRoundInfo(final String gameId) {
+        GameInfo gameInfo = this.getGameInfo(gameId);
+        List<RoundInfo> roundInfos = gameInfo.getRoundInfos().stream()
+                .filter(round -> round.getOrganized())
+                .collect(Collectors.toList());
+
+        //先判断本轮次任务是否成功，根据黑票数判定
+        if (!CollectionUtils.isEmpty(roundInfos)) {
+            for (RoundInfo roundInfo : roundInfos) {
+                if (roundInfo.getRound() == 4 && 7 <= gameInfo.getGamerNumber()) {
+                    if (roundInfo.getBlackTicketsNumber() >= 2) {
+                        roundInfo.setSuccess(Boolean.FALSE);
+                    }
+                } else {
+                    if (roundInfo.getBlackTicketsNumber() >= 1) {
+                        roundInfo.setSuccess(Boolean.FALSE);
+                    }
+                }
+            }
+        }
+
+        //再判断游戏是否结束。
+        Long successRounds = roundInfos.stream().filter(roundInfo -> roundInfo.getSuccess()).count();
+        if (successRounds == 3) {
+            gameInfo.setMessage("好人获胜！");
+            gameInfo.setEnd(Boolean.TRUE);
+        }
+
+        Long failedRounds = roundInfos.stream().filter(roundInfo -> !roundInfo.getSuccess()).count();
+        if (failedRounds == 3) {
+            gameInfo.setMessage("坏人获胜！");
+            gameInfo.setEnd(Boolean.TRUE);
+        }
+
+        redisService.saveEntityData(gameInfo.getGameId(), gameInfo);
+        return gameInfo;
     }
 }
