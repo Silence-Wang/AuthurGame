@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Set;
+
 @Service
 public class RedisService {
 
@@ -27,6 +30,11 @@ public class RedisService {
 
     public Object getData(String key) {
         return redisTemplate.opsForValue().get(key);
+    }
+
+    public List<Object> getByKeyPartten(final String keyPartten) {
+        Set keys = redisTemplate.keys(keyPartten + "*");
+        return redisTemplate.opsForValue().multiGet(keys);
     }
 
     public void cacheGamerNumberAndHeros() {

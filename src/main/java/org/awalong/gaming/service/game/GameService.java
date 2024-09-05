@@ -19,9 +19,9 @@ public class GameService {
 
     private static final String GAME_PREFIX  = "GAME_";
 
-    private static final String NEED_BEEN_SEEN_BY_MEILIN = "莫甘娜,刺客,奥伯伦";
-    private static final String NEED_BEEN_SEEN_BY_PAI = "莫甘娜,梅林";
-    private static final String NEED_CONFIRM_EACH_OTHER = "莫甘娜,刺客,莫德雷德,爪牙";
+    private static final String SEEN_BY_MEILIN = "莫甘娜,刺客,奥伯伦,爪牙";
+    private static final String SEEN_BY_PAI = "莫甘娜,梅林";
+    private static final String CONFIRM_EACH_OTHER = "莫甘娜,刺客,莫德雷德,爪牙";
 
 
     @Autowired
@@ -104,6 +104,7 @@ public class GameService {
 
     /**
      * 将房间里的人的名字和游戏人物身份随机绑定，并且都返回给前端。
+     * 同时提供视野信息。
      * @param gameId
      * @return
      */
@@ -123,21 +124,18 @@ public class GameService {
                 partInfo.put(hasJoined.get(i), heroSink.get(i));
             }
 
-            // 插入视野信息
+            //这里处理一下视野信息
             for (Map.Entry<String, String> partInfoEntry : partInfo.entrySet()) {
-//                partInfoEntry.getKey()
+                PlayerIdentity playerIdentity = new PlayerIdentity();
+                playerIdentity.setIdentity(partInfoEntry.getValue());
+                playerIdentity.setVision(getVision(partInfoEntry.getValue(), partInfo));
 
+                match.put(partInfoEntry.getKey(), playerIdentity);
             }
-
-
-
-
-
             game.setPlayerIdentitys(match);
             game.setStart(Boolean.TRUE);
         }
         redisService.saveEntityData(game.getGameId(), game);
-        //TODO 这里处理一下视野信息
 
         return game;
     }
@@ -149,16 +147,23 @@ public class GameService {
     /**
      * 根据gameId来获取round信息。
      * 先计算Round的成功或者失败。
-     * 如果有3局失败或者3就成功，则直接判定胜负。
+     * 如果有3局失败或者3局成功，则直接判定胜负。
      * @param gameId
      * @return
      */
     public GameInfo getGameRoundInfo(final String gameId) {
         GameInfo gameInfo = this.getGameInfo(gameId);
-        List<RoundInfo> roundInfos = gameInfo.getRoundInfos().stream()
+        List<Object> roundInfoObjs = redisService.getByKeyPartten(gameId);
+        List<RoundInfo> allRoundInfos = new ArrayList<>();
+        for (Object roundInfoObj : roundInfoObjs) {
+            allRoundInfos.add((RoundInfo) roundInfoObj);
+        }
+
+        List<RoundInfo> roundInfos = allRoundInfos.stream()
                 .filter(round -> round.getOrganized())
                 .collect(Collectors.toList());
 
+        gameInfo.setRoundInfos(roundInfos);
         //先判断本轮次任务是否成功，根据黑票数判定
         if (!CollectionUtils.isEmpty(roundInfos)) {
             for (RoundInfo roundInfo : roundInfos) {
@@ -190,4 +195,44 @@ public class GameService {
         redisService.saveEntityData(gameInfo.getGameId(), gameInfo);
         return gameInfo;
     }
+
+    /**
+     * 获取对应身份的视野
+     * @param identity
+     * @param partInfo
+     * @return
+     */
+    private List<String> getVision(final String identity, final Map<String, String> partInfo) {
+        List<String> vision = new ArrayList<>();
+        if ("梅林".equals(identity)) {
+            for (Map.Entry<String, String> entry : partInfo.entrySet()) {
+                if (Arrays.asList(SEEN_BY_MEILIN.split(",")).contains(entry.getValue())) {
+                    vision.add(entry.getKey());
+                }
+            }
+            return vision;
+        }
+
+        if ("派西维尔".equals(identity)) {
+            for (Map.Entry<String, String> entry : partInfo.entrySet()) {
+                if (Arrays.asList(SEEN_BY_PAI.split(",")).contains(entry.getValue())) {
+                    vision.add(entry.getKey());
+                }
+            }
+            return vision;
+        }
+
+        if (CONFIRM_EACH_OTHER.contains(identity)) {
+            for (Map.Entry<String, String> entry : partInfo.entrySet()) {
+                if (Arrays.asList(SEEN_BY_MEILIN.split(",")).contains(entry.getValue()) && !identity.equals(entry.getValue())) {
+                    vision.add(entry.getKey());
+                }
+            }
+            return vision;
+        }
+
+
+        return vision;
+    }
+
 }

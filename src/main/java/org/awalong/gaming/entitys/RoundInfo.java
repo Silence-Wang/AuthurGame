@@ -13,6 +13,9 @@ import java.util.Map;
 public class RoundInfo implements Serializable {
     private static final long serialVersionUID = 3L;
 
+    //游戏ID
+    private String gameId;
+
     //轮次
     private int round;
 
@@ -21,6 +24,7 @@ public class RoundInfo implements Serializable {
 
     //车上人员
     private List<String> teamMembers;
+
 
     //反对组队人员
     private List<String> objectors;

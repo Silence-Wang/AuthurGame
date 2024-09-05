@@ -17,9 +17,12 @@ public class TempTeamInfo  implements Serializable {
     //车长
     private String captain;
 
+    //轮次
+    private int round;
+
     //组队成员
     private List<String> teamMember;
 
-    //是否更新过
+    //是什么类型的组队，FIRST表示临时组队，FINAL表示最终组队。
     private Boolean update;
 }

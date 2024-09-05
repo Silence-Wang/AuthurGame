@@ -1,9 +1,6 @@
 package org.awalong.gaming.controller.game;
 
-import org.awalong.gaming.entitys.GameInfo;
-import org.awalong.gaming.entitys.TaskInfo;
-import org.awalong.gaming.entitys.TempTeamInfo;
-import org.awalong.gaming.entitys.VoteInfo;
+import org.awalong.gaming.entitys.*;
 import org.awalong.gaming.service.GameInProcessingService;
 import org.awalong.gaming.service.game.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,8 +41,8 @@ public class GameInProcessingController {
      * @return
      */
     @PostMapping("/teamUp")
-    public GameInfo teamUp(@RequestBody TempTeamInfo tempTeamInfo) {
-        return gameInProcessingService.dealGameProcess(tempTeamInfo);
+    public RoundInfo teamUp(@RequestBody TempTeamInfo tempTeamInfo) {
+        return gameInProcessingService.teamUp(tempTeamInfo);
     }
 
     /**

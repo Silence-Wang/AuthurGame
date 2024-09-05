@@ -30,7 +30,8 @@ public class GameController {
     }
 
     /**
-     * 在每一次出任务以后调用一次，来检查round里面的信息
+     * 在每一次出任务以后调用一次，来检查round里面的信息。
+     * 在这个接口里，把round info存进gameInfo里一起给到前端展示。
      *
      * @param gameId
      * @return

@@ -2,6 +2,7 @@ package org.awalong.gaming.service;
 
 import org.awalong.gaming.entitys.*;
 import org.awalong.gaming.service.game.GameService;
+import org.awalong.gaming.service.game.RoundService;
 import org.awalong.gaming.service.redis.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,46 +22,28 @@ public class GameInProcessingService {
     @Autowired
     private RedisService redisService;
 
+    @Autowired
+    private RoundService roundService;
+
     /**
-     * 组车队的逻辑
+     * 组车队
      * TODO 这里重新理一下逻辑，对于修改车队的做法，到底后端怎么处理这条记录？
      * 如果roun
      * @param tempTeamInfo
      * @return
      */
-    public GameInfo dealGameProcess(final TempTeamInfo tempTeamInfo) {
-        GameInfo gameInfo = gameService.getGameInfo(tempTeamInfo.getGameId());
-        if (CollectionUtils.isEmpty(gameInfo.getRoundInfos())) {
-            RoundInfo roundInfo = new RoundInfo();
-            roundInfo.setCaptain(tempTeamInfo.getCaptain());
-            roundInfo.setRound(1);
-            roundInfo.setTeamMembers(tempTeamInfo.getTeamMember());
-
-            gameInfo.setRoundInfos(List.of(roundInfo));
-        } else {
-            // 如果不是更新，就是临时选队，新增一条记录即可，原来是2条，加一条第3条；
-            // 否则就是最终队伍，要去修改前面刚刚创建的临时队伍3。
-            if (!tempTeamInfo.getUpdate()) {
-                List<RoundInfo> oldRounds = new ArrayList<>(gameInfo.getRoundInfos());
-                RoundInfo roundInfo = new RoundInfo();
-                roundInfo.setCaptain(tempTeamInfo.getCaptain());
-                roundInfo.setRound(oldRounds.size() + 1);
-                roundInfo.setTeamMembers(tempTeamInfo.getTeamMember());
-                oldRounds.add(roundInfo);
-
-                gameInfo.setRoundInfos(oldRounds);
-            } else {
-                List<RoundInfo> oldRounds = new ArrayList<>(gameInfo.getRoundInfos());
-                // 根据oldRounds里的RoundInfo对象，取round最大的这个对象
-                Optional<RoundInfo> newestRound = oldRounds.stream()
-                        .max(Comparator.comparingInt(RoundInfo::getRound));
-                newestRound.get().setTeamMembers(tempTeamInfo.getTeamMember());
-                gameInfo.setRoundInfos(oldRounds);
-            }
+    public RoundInfo teamUp(final TempTeamInfo tempTeamInfo) {
+        RoundInfo roundInfo = roundService.getRoundInfo(tempTeamInfo.getGameId() + "-" + tempTeamInfo.getRound());
+        if (null == roundInfo) {
+            roundInfo = new RoundInfo();
         }
 
-        redisService.saveEntityData(tempTeamInfo.getGameId(), gameInfo);
-        return gameInfo;
+        roundInfo.setGameId(tempTeamInfo.getGameId());
+        roundInfo.setRound(tempTeamInfo.getRound());
+        roundInfo.setTeamMembers(tempTeamInfo.getTeamMember());
+
+        redisService.saveEntityData(tempTeamInfo.getGameId() + "-" + tempTeamInfo.getRound(), roundInfo);
+        return roundInfo;
     }
 
 
@@ -72,12 +55,8 @@ public class GameInProcessingService {
      */
     public GameInfo vote(final VoteInfo voteInfo) {
         GameInfo gameInfo = gameService.getGameInfo(voteInfo.getGameId());
+        RoundInfo roundInfo = roundService.getRoundInfo(voteInfo.getGameId() + "-" + voteInfo.getRound());
         // 这里检查一下投票人，防止出现重复投票。
-        List<RoundInfo> roundInfos = gameInfo.getRoundInfos();
-        RoundInfo roundInfo = roundInfos.stream()
-                .filter(round -> round.getRound() == voteInfo.getRound())
-                .collect(Collectors.toList()).get(0);
-
         List<String> combinedList = new ArrayList<>();
         if (!CollectionUtils.isEmpty(roundInfo.getSupporters())) {
             combinedList.addAll(roundInfo.getSupporters());
