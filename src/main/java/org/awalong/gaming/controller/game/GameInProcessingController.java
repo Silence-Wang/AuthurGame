@@ -57,12 +57,13 @@ public class GameInProcessingController {
 
     /**
      * 通过投票后，判断是否能发车的逻辑
-     * @param voteInfo
+     * @param gameId
+     * @param round
      * @return
      */
-    @PostMapping("/canDrive")
-    public boolean canDrive(@RequestBody VoteInfo voteInfo) {
-        return gameInProcessingService.canDrive(voteInfo);
+    @PostMapping("/checkRoundInfoAfterVote/{gameId}/{round}")
+    public RoundInfo checkRoundInfoAfterVote(@PathVariable("gameId") String gameId, @PathVariable("round") int round) {
+        return gameInProcessingService.checkRoundInfoAfterVote(gameId, round);
     }
 
     /**
@@ -76,6 +77,16 @@ public class GameInProcessingController {
         return "已投票！";
     }
 
+    /**
+     * 通过投票后，判断是否能发车的逻辑
+     * @param gameId
+     * @param round
+     * @return
+     */
+    @PostMapping("/checkRoundInfoAfterTask/{gameId}/{round}")
+    public RoundInfo checkRoundInfoAfterTask(@PathVariable("gameId") String gameId, @PathVariable("round") int round) {
+        return gameInProcessingService.checkRoundInfoAfterTask(gameId, round);
+    }
 
 
 }

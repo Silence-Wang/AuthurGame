@@ -36,7 +36,7 @@ public class GameInfo implements Serializable {
     private List<String> heroSink;
 
     //轮次信息
-    private List<RoundInfo> roundInfos;
+//    private List<RoundInfo> roundInfos;
 
     //哪一方胜利
     private String whoWin;

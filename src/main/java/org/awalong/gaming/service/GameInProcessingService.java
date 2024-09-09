@@ -61,7 +61,6 @@ public class GameInProcessingService {
         if (!CollectionUtils.isEmpty(roundInfo.getSupporters())) {
             combinedList.addAll(roundInfo.getSupporters());
         }
-
         if (!CollectionUtils.isEmpty(roundInfo.getObjectors())) {
             combinedList.addAll(roundInfo.getObjectors());
         }
@@ -94,30 +93,37 @@ public class GameInProcessingService {
         }
 
         redisService.saveEntityData(voteInfo.getGameId(), gameInfo);
+        redisService.saveEntityData(voteInfo.getGameId() + "-" + voteInfo.getRound(), roundInfo);
         return gameInfo;
     }
 
     /**
-     *
-     * @param voteInfo
+     * 检查当前轮次的信息。如果投票人数满了，就将结果返回给前端；否则告诉前端还有人没投票，再等等。
+     * @param gameId
+     * @param round
      * @return
      */
-    public Boolean canDrive(final VoteInfo voteInfo) {
-        GameInfo gameInfo = gameService.getGameInfo(voteInfo.getGameId());
-        List<RoundInfo> roundInfos = gameInfo.getRoundInfos();
-        RoundInfo roundInfo = roundInfos.stream()
-                .filter(round -> round.getRound() == voteInfo.getRound())
-                .collect(Collectors.toList()).get(0);
+    public RoundInfo checkRoundInfoAfterVote(final String gameId, final int round) {
+        GameInfo gameInfo = gameService.getGameInfo(gameId);
+        RoundInfo roundInfo = roundService.getRoundInfo(gameId + "-" + round);
 
-        int supportNumber = roundInfo.getSupporters().size();
-        if (supportNumber > gameInfo.getGamerNumber() / 2) {
-            roundInfo.setOrganized(Boolean.TRUE);
+        if (roundInfo.getVoted() != gameInfo.getGamerNumber()) {
+            gameInfo.setMessage("还有人没投票，再等等。。。");
         } else {
-            roundInfo.setOrganized(Boolean.FALSE);
+            int supportNumber = roundInfo.getSupporters().size();
+            if (supportNumber > gameInfo.getGamerNumber() / 2) {
+                roundInfo.setOrganized(Boolean.TRUE);
+            } else {
+                roundInfo.setOrganized(Boolean.FALSE);
+                roundInfo.setSuccess(Boolean.FALSE);
+                roundInfo.setBlackTicketsNumber(0);
+
+            }
         }
 
+        redisService.saveEntityData(gameId + "-" + round, roundInfo);
         redisService.saveEntityData(gameInfo.getGameId(), gameInfo);
-        return roundInfo.getOrganized();
+        return roundInfo;
     }
 
     /**
@@ -132,10 +138,7 @@ public class GameInProcessingService {
      */
     public void doTask(final TaskInfo taskInfo) {
         GameInfo gameInfo = gameService.getGameInfo(taskInfo.getGameId());
-        List<RoundInfo> roundInfos = gameInfo.getRoundInfos();
-        RoundInfo roundInfo = roundInfos.stream()
-                .filter(round -> round.getRound() == taskInfo.getRound())
-                .collect(Collectors.toList()).get(0);
+        RoundInfo roundInfo = roundService.getRoundInfo(taskInfo.getGameId() + "-" + taskInfo.getRound());
 
         // 先保存投票信息
         Map<String, Boolean> voteStatus = roundInfo.getVoteStatus();
@@ -150,6 +153,40 @@ public class GameInProcessingService {
         }
 
         redisService.saveEntityData(taskInfo.getGameId(), gameInfo);
+    }
+
+    /**
+     * 检查当前轮次做任务是成功还是失败。
+     * 如果车上人都投票了，就计算任务结果，并将结果返回给前端；否则告诉前端还有人没做任务，再等等。
+     * @param gameId
+     * @param round
+     * @return
+     */
+    public RoundInfo checkRoundInfoAfterTask(final String gameId, final int round) {
+        GameInfo gameInfo = gameService.getGameInfo(gameId);
+        RoundInfo roundInfo = roundService.getRoundInfo(gameId + "-" + round);
+
+        if (roundInfo.getVoteStatus().size() != roundInfo.getTeamMembers().size()) {
+            gameInfo.setMessage("还有人没做任务，再等等。。。");
+        } else {
+            if (roundInfo.getRound() == 4 && 7 <= gameInfo.getGamerNumber()) {
+                if (roundInfo.getBlackTicketsNumber() >= 2) {
+                    roundInfo.setSuccess(Boolean.FALSE);
+                } else {
+                    roundInfo.setSuccess(Boolean.TRUE);
+                }
+            } else {
+                if (roundInfo.getBlackTicketsNumber() >= 1) {
+                    roundInfo.setSuccess(Boolean.FALSE);
+                } else {
+                    roundInfo.setSuccess(Boolean.TRUE);
+                }
+            }
+        }
+
+        redisService.saveEntityData(gameId + "-" + round, roundInfo);
+        redisService.saveEntityData(gameInfo.getGameId(), gameInfo);
+        return roundInfo;
     }
 
 

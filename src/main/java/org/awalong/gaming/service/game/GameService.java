@@ -148,6 +148,7 @@ public class GameService {
      * 根据gameId来获取round信息。
      * 先计算Round的成功或者失败。
      * 如果有3局失败或者3局成功，则直接判定胜负。
+     * TODO 这里暂时不考虑坏人阵营提前刀梅林的局面，场外直接处理。
      * @param gameId
      * @return
      */
@@ -159,37 +160,25 @@ public class GameService {
             allRoundInfos.add((RoundInfo) roundInfoObj);
         }
 
-        List<RoundInfo> roundInfos = allRoundInfos.stream()
+        List<RoundInfo> organizedRoundInfos = allRoundInfos.stream()
                 .filter(round -> round.getOrganized())
                 .collect(Collectors.toList());
 
-        gameInfo.setRoundInfos(roundInfos);
-        //先判断本轮次任务是否成功，根据黑票数判定
-        if (!CollectionUtils.isEmpty(roundInfos)) {
-            for (RoundInfo roundInfo : roundInfos) {
-                if (roundInfo.getRound() == 4 && 7 <= gameInfo.getGamerNumber()) {
-                    if (roundInfo.getBlackTicketsNumber() >= 2) {
-                        roundInfo.setSuccess(Boolean.FALSE);
-                    }
-                } else {
-                    if (roundInfo.getBlackTicketsNumber() >= 1) {
-                        roundInfo.setSuccess(Boolean.FALSE);
-                    }
-                }
-            }
-        }
+//        gameInfo.setRoundInfos(roundInfos);
 
-        //再判断游戏是否结束。
-        Long successRounds = roundInfos.stream().filter(roundInfo -> roundInfo.getSuccess()).count();
+        //判断游戏是否结束。
+        Long successRounds = organizedRoundInfos.stream().filter(roundInfo -> roundInfo.getSuccess()).count();
         if (successRounds == 3) {
             gameInfo.setMessage("好人获胜！");
             gameInfo.setEnd(Boolean.TRUE);
+            gameInfo.setWhoWin("Blue");
         }
 
-        Long failedRounds = roundInfos.stream().filter(roundInfo -> !roundInfo.getSuccess()).count();
+        Long failedRounds = organizedRoundInfos.stream().filter(roundInfo -> !roundInfo.getSuccess()).count();
         if (failedRounds == 3) {
             gameInfo.setMessage("坏人获胜！");
             gameInfo.setEnd(Boolean.TRUE);
+            gameInfo.setWhoWin("Red");
         }
 
         redisService.saveEntityData(gameInfo.getGameId(), gameInfo);

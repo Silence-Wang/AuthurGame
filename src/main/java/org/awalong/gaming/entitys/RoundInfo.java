@@ -25,7 +25,8 @@ public class RoundInfo implements Serializable {
     //车上人员
     private List<String> teamMembers;
 
-
+    // 以上是组队的时候会创建出来的信息
+    
     //反对组队人员
     private List<String> objectors;
 
@@ -35,11 +36,13 @@ public class RoundInfo implements Serializable {
     //已投票人数
     private int voted;
 
+    //以上是投票过程中会记录的信息
+
     //是否成功组队
     private Boolean organized;
 
     //本轮任务是否成功
-    private Boolean success = Boolean.TRUE;
+    private Boolean success;
 
     //黑票票数
     private int blackTicketsNumber;
