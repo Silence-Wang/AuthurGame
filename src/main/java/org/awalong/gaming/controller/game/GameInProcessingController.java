@@ -1,7 +1,7 @@
 package org.awalong.gaming.controller.game;
 
 import org.awalong.gaming.entitys.*;
-import org.awalong.gaming.service.GameInProcessingService;
+import org.awalong.gaming.service.game.GameInProcessingService;
 import org.awalong.gaming.service.game.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;

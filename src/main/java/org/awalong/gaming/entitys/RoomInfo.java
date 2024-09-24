@@ -20,6 +20,9 @@ public class RoomInfo implements Serializable {
     //进入房间的人
     private List<String> roomMembers;
 
+    //已加入的人数
+    private int joinedNumber;
+
     //房间人数
     private int number;
 

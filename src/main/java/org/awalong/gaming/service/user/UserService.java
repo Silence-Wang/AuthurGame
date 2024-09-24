@@ -28,21 +28,22 @@ public class UserService {
         RoomInfo room = (RoomInfo) redisService.getData(roomId);
         if (null != room) {
             List<String> roomMembers = new ArrayList<>(room.getRoomMembers());
-            if (roomMembers.size() == room.getNumber()) {
+            if (room.getJoinedNumber() == room.getNumber()) {
                 room.setMessage("房间已满员！");
             } else if (roomMembers.contains(username)) {
                 room.setMessage("你已经加入房间，请等待房主开始游戏。");
             } else {
                 roomMembers.add(username);
                 room.setRoomMembers(roomMembers);
+                room.setJoinedNumber(room.getJoinedNumber() + 1);
                 redisService.saveEntityData(roomId, room);
             }
-            System.out.println(username + " joined Room " + roomId + " successfully");
+            System.out.println(username + " 加入房间 " + roomId);
             return room;
         }
         room = new RoomInfo();
         room.setRoomStatus(Boolean.FALSE);
-        room.setMessage("The room haven't been create, you can create by yourself or wait others to create.");
+        room.setMessage("这个房间号不存在，你可以自己创建房间或者等待其他人创建后再加入。");
 
         return room;
     }

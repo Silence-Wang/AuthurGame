@@ -28,7 +28,7 @@ public class GameService {
     private RedisService redisService;
 
     /**
-     * 这里是不断检查房间是否可以开始游戏。
+     * 这里前端会不断检查房间是否可以开始游戏。
      * 通过传进来的房间号，检查已经进入房间的人数与设置的游戏人数是否一致。
      * 如果一致的话，将游戏开始状态设置成true，同时，将房间里的人放进游戏人员里，保存进数据库。页面开始进入下一步；
      * 如果不一致，就将已经进入的人的信息返回到页面上，展示出来。
@@ -37,7 +37,6 @@ public class GameService {
      */
     public GameInfo checkGameCanStart(final String roomId) {
         RoomInfo room = (RoomInfo) redisService.getData(roomId);
-
         String gameId = roomId.split("_").length > 1 ? GAME_PREFIX + roomId.split("_")[1] : GAME_PREFIX + roomId;
         GameInfo gameInfo = (GameInfo) redisService.getData(gameId);
         if (null != gameInfo) {
@@ -45,9 +44,37 @@ public class GameService {
                 gameInfo.setStart(Boolean.TRUE);
                 gameInfo.setMessage("人齐了，开始吧。");
                 gameInfo.setHasJoined(room.getRoomMembers());
+
+                //将房间里的人的名字和游戏人物身份随机绑定，并且都返回给前端。同时处理好视野信息。
+                if (null != gameInfo) {
+                    List<String> hasJoined = gameInfo.getHasJoined();
+                    List<String> heroSink = gameInfo.getHeroSink();
+
+                    Collections.shuffle(hasJoined);
+                    Collections.shuffle(heroSink);
+                    Map<String, PlayerIdentity> match = new HashMap<>();
+
+                    // 先把玩家自己的身份随机安排好
+                    Map<String, String> partInfo = new HashMap<>();
+                    for (int i = 0; i < hasJoined.size(); i++) {
+                        partInfo.put(hasJoined.get(i), heroSink.get(i));
+                    }
+
+                    //这里处理一下视野信息
+                    for (Map.Entry<String, String> partInfoEntry : partInfo.entrySet()) {
+                        PlayerIdentity playerIdentity = new PlayerIdentity();
+                        playerIdentity.setIdentity(partInfoEntry.getValue());
+                        playerIdentity.setVision(getVision(partInfoEntry.getValue(), partInfo));
+
+                        match.put(partInfoEntry.getKey(), playerIdentity);
+                    }
+                    gameInfo.setPlayerIdentitys(match);
+                    gameInfo.setStart(Boolean.TRUE);
+                }
                 redisService.saveEntityData(gameId, gameInfo);
             } else {
                 gameInfo.setStart(Boolean.FALSE);
+                gameInfo.setHasJoined(room.getRoomMembers());
                 gameInfo.setMessage("人没齐，再等等。");
             }
         } else {
@@ -103,41 +130,16 @@ public class GameService {
     }
 
     /**
-     * 将房间里的人的名字和游戏人物身份随机绑定，并且都返回给前端。
-     * 同时提供视野信息。
+     *
+     *
      * @param gameId
      * @return
      */
-    public GameInfo startGame(final String gameId) {
+    public PlayerIdentity startGame(final String gameId, final String player) {
         GameInfo game = (GameInfo) redisService.getData(gameId);
-        if (null != game) {
-            List<String> hasJoined = game.getHasJoined();
-            List<String> heroSink = game.getHeroSink();
 
-            Collections.shuffle(hasJoined);
-            Collections.shuffle(heroSink);
-            Map<String, PlayerIdentity> match = new HashMap<>();
-
-            // 先把玩家自己的身份随机安排好
-            Map<String, String> partInfo = new HashMap<>();
-            for (int i = 0; i < hasJoined.size(); i++) {
-                partInfo.put(hasJoined.get(i), heroSink.get(i));
-            }
-
-            //这里处理一下视野信息
-            for (Map.Entry<String, String> partInfoEntry : partInfo.entrySet()) {
-                PlayerIdentity playerIdentity = new PlayerIdentity();
-                playerIdentity.setIdentity(partInfoEntry.getValue());
-                playerIdentity.setVision(getVision(partInfoEntry.getValue(), partInfo));
-
-                match.put(partInfoEntry.getKey(), playerIdentity);
-            }
-            game.setPlayerIdentitys(match);
-            game.setStart(Boolean.TRUE);
-        }
-        redisService.saveEntityData(game.getGameId(), game);
-
-        return game;
+        Map<String, PlayerIdentity> playerIdentitys = game.getPlayerIdentitys();
+        return playerIdentitys.get(player);
     }
 
     public GameInfo getGameInfo(final String gameNumber) {

@@ -28,15 +28,17 @@ public class RoomService {
     public RoomInfo createRoom(final RoomInfo roomInfo) {
         RoomInfo room = (RoomInfo) redisService.getData(roomInfo.getRoomId());
         if (null != room) {
-            System.out.println("Room " + room.getRoomId() + " had been created");
-            room.setMessage("Room " + room.getRoomId() + " had been created");
+            System.out.println("房间 " + room.getRoomId() + "已经被创建，去加入吧。");
+            room.setMessage("房间 " + room.getRoomId() + "已经被创建，去加入吧。");
+            room.setRoomStatus(Boolean.FALSE);
             return room;
         }
         roomInfo.setRoomMembers(List.of(roomInfo.getRoomMaster()));
         roomInfo.setRoomStatus(Boolean.TRUE);
+        roomInfo.setJoinedNumber(1);
         redisService.saveEntityData(roomInfo.getRoomId(), roomInfo);
 
-        System.out.println("Pre deal cards .......");
+        System.out.println("预先处理游戏信息.......");
         gameService.preDealCards(roomInfo.getRoomId());
 
         return roomInfo;
