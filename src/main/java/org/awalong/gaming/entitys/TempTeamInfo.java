@@ -24,5 +24,5 @@ public class TempTeamInfo  implements Serializable {
     private List<String> teamMember;
 
     //是什么类型的组队，FIRST表示临时组队，FINAL表示最终组队。
-    private Boolean update;
+    private String type;
 }

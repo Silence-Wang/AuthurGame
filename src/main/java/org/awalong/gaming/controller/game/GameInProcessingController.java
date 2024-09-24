@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RestController
+@RequestMapping("/gameInProcess")
 public class GameInProcessingController {
 
     @Autowired
