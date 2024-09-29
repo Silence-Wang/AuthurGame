@@ -16,6 +16,7 @@ public class RedisService {
     public static final String EIGHT_PLAYER = "EIGHT_PLAYER";
     public static final String NINE_PLAYER = "NINE_PLAYER";
     public static final String TEN_PLAYER = "TEN_PLAYER";
+    public static final String TWO_PLAYER = "TWO_PLAYER";
 
     @Autowired
     private RedisTemplate redisTemplate;
@@ -44,5 +45,6 @@ public class RedisService {
         redisTemplate.opsForValue().set(EIGHT_PLAYER, "梅林,派西维尔,忠臣,忠臣,忠臣,莫甘娜,刺客,爪牙");
         redisTemplate.opsForValue().set(NINE_PLAYER, "梅林,派西维尔,忠臣,忠臣,忠臣,忠臣,莫德雷德,莫甘娜,刺客");
         redisTemplate.opsForValue().set(TEN_PLAYER, "梅林,派西维尔,忠臣,忠臣,忠臣,忠臣,莫德雷德,莫甘娜,刺客,奥伯伦");
+        redisTemplate.opsForValue().set(TWO_PLAYER, "梅林,莫甘娜");
     }
 }

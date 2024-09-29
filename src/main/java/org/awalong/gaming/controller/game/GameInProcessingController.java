@@ -42,8 +42,11 @@ public class GameInProcessingController {
      * @return
      */
     @PostMapping("/teamUp")
-    public RoundInfo teamUp(@RequestBody TempTeamInfo tempTeamInfo) {
-        return gameInProcessingService.teamUp(tempTeamInfo);
+    public ResponseData teamUp(@RequestBody TempTeamInfo tempTeamInfo) {
+        ResponseData responseData = new ResponseData();
+        responseData.setData(gameInProcessingService.teamUp(tempTeamInfo));
+        responseData.setCode(200);
+        return responseData;
     }
 
     /**
@@ -52,8 +55,12 @@ public class GameInProcessingController {
      * @return
      */
     @PostMapping("/vote")
-    public GameInfo vote(@RequestBody VoteInfo voteInfo) {
-        return gameInProcessingService.vote(voteInfo);
+    public ResponseData vote(@RequestBody VoteInfo voteInfo) {
+        ResponseData responseData = new ResponseData();
+        responseData.setData(gameInProcessingService.vote(voteInfo));
+        responseData.setCode(200);
+
+        return responseData;
     }
 
     /**
@@ -62,9 +69,12 @@ public class GameInProcessingController {
      * @param round
      * @return
      */
-    @PostMapping("/checkRoundInfoAfterVote/{gameId}/{round}")
-    public RoundInfo checkRoundInfoAfterVote(@PathVariable("gameId") String gameId, @PathVariable("round") int round) {
-        return gameInProcessingService.checkRoundInfoAfterVote(gameId, round);
+    @GetMapping("/checkRoundInfoAfterVote/{gameId}/{round}")
+    public ResponseData checkRoundInfoAfterVote(@PathVariable("gameId") String gameId, @PathVariable("round") int round) {
+        ResponseData responseData = new ResponseData();
+        responseData.setData(gameInProcessingService.checkRoundInfoAfterVote(gameId, round));
+        responseData.setCode(200);
+        return responseData;
     }
 
     /**

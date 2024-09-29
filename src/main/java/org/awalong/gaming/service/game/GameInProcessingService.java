@@ -28,12 +28,12 @@ public class GameInProcessingService {
      * @return
      */
     public RoundInfo teamUp(final TempTeamInfo tempTeamInfo) {
-        System.out.println("COming to team up.......");
+        System.out.println("Coming to team up.......");
         RoundInfo roundInfo = roundService.getRoundInfo(tempTeamInfo.getGameId() + "-" + tempTeamInfo.getRound());
         if (null == roundInfo) {
             roundInfo = new RoundInfo();
         }
-
+        roundInfo.setCaptain(tempTeamInfo.getCaptain());
         roundInfo.setGameId(tempTeamInfo.getGameId());
         roundInfo.setRound(tempTeamInfo.getRound());
         roundInfo.setTeamMembers(tempTeamInfo.getTeamMember());

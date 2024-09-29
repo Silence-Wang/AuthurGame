@@ -42,7 +42,6 @@ public class GameService {
         if (null != gameInfo) {
             if (room.getNumber() == room.getRoomMembers().size()) {
                 gameInfo.setStart(Boolean.TRUE);
-                gameInfo.setMessage("人齐了，开始吧。");
                 gameInfo.setHasJoined(room.getRoomMembers());
 
                 //将房间里的人的名字和游戏人物身份随机绑定，并且都返回给前端。同时处理好视野信息。
@@ -105,6 +104,9 @@ public class GameService {
 
         List<String> heroSink = new ArrayList<>();
         switch (room.getNumber()) {
+            case 2:
+                heroSink = Arrays.asList(String.valueOf(redisService.getData(TWO_PLAYER)).split(","));
+                break;
             case 5:
                 heroSink = Arrays.asList(String.valueOf(redisService.getData(FIVE_PLAYER)).split(","));
                 break;
